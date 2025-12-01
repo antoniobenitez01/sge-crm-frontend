@@ -6,6 +6,7 @@ import { CommonService } from '../shared/common.service';
 import { URL_API } from 'src/environments/environment';
 
 const ENDPOINT = 'nivel';
+const ENDPOINT2 = 'items';
 
 
 @Injectable({
@@ -22,7 +23,8 @@ export class NivelesService {
   }
 
   getAllNiveles() {
-    return this.http.get<ApiResponse>(`${URL_API}/${ENDPOINT}.php`, { headers: this.commonService.headers });
+    //return this.http.get<ApiResponse>(`${URL_API}/${ENDPOINT}.php`, { headers: this.commonService.headers });
+    return this.http.get<ApiResponse>(`http://api2.radfpd.es/${ENDPOINT2}`);
   }
 
   addMotivoReunion(nivel: Nivel) {
