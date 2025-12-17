@@ -35,7 +35,7 @@ export class UnidadesDualComponent implements OnInit {
   permises: Permises;
 
   displayedColumns: string[];
-  private filterValues = { id_unidad_dual: '', unidad_dual: '', observaciones: ''};
+  private filterValues = { id_unidad_dual: '', unidad_dual: '', observaciones: '' };
 
   constructor(
     public dialog: MatDialog,
@@ -54,7 +54,11 @@ export class UnidadesDualComponent implements OnInit {
     this.permises = RESPONSE.permises;
 
     if (RESPONSE.ok) {
-      this.unidadesDualService.unidadDual = RESPONSE.data as UnidadDual[];
+      this.unidadesDualService.unidadDual = (RESPONSE.data as UnidadDual[])
+        .map(unidad_dual => ({
+          ...unidad_dual,
+          observaciones: unidad_dual.observaciones == null ? "Sin observaciones" : unidad_dual.observaciones
+        }));
       this.displayedColumns = ['id_unidad_dual', 'unidad_dual','observaciones', 'actions'];
       this.dataSource.data = this.unidadesDualService.unidadDual;
       this.dataSource.sort = this.sort;
