@@ -29,6 +29,7 @@ export class EditFamiliaComponent implements OnInit {
     this.familiaForm = new FormGroup({
       id_familia: new FormControl(this.familia.id_familia, Validators.required),
       familia: new FormControl(this.familia.familia, Validators.required),
+      cod_familia: new FormControl(this.familia.cod_familia),
       observaciones: new FormControl(this.familia.observaciones)
     });
   }

@@ -10,6 +10,14 @@
                 <td mat-cell *matCellDef="let familias"> {{familias.id_familia}} </td>
             </ng-container>
 
+            <ng-container matColumnDef="cod_familia">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="cod_familiaFilter" placeholder="CodFamilia">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let familias"> {{familias.cod_familia}} </td>
+            </ng-container>
+
             <ng-container matColumnDef="familia">
                 <th mat-header-cell *matHeaderCellDef>
                     <input matInput [formControl]="familiaFilter" placeholder="Familia">
