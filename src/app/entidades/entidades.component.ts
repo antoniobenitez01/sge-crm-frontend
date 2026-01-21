@@ -70,12 +70,12 @@ export class EntidadesComponent implements OnInit {
     private servicioTipoEntidad: TiposEntidadService,
     private servicioProvincia: ProvinciasService,
     private servicioContacto: ContactosService,
-    
+
     private overlay: Overlay,
     private clipboard: Clipboard,
     private snackBar: MatSnackBar,
 
-    
+
 
 
   ) { }
@@ -84,7 +84,7 @@ export class EntidadesComponent implements OnInit {
     this.getEntidades();
   }
 
-  
+
   async getEntidades() {
     const RESPONSE = await this.entidadesService.getAllEntidades().toPromise();
     this.permises = RESPONSE.permises;
@@ -99,7 +99,7 @@ export class EntidadesComponent implements OnInit {
       this.selection = new SelectionModel<Entidad>(false, [this.entidad]);
 
       this.onChanges();
-    }  
+    }
   }
 
   async addEntidad() {
@@ -111,7 +111,7 @@ export class EntidadesComponent implements OnInit {
         //this.dataSource.data = this.entidadesService.entidad;
         this.ngOnInit();
       }
-    }  
+    }
   }
 
   async editEntidad(entidad: Entidad) {
@@ -123,7 +123,7 @@ export class EntidadesComponent implements OnInit {
         //this.dataSource.data = this.entidadesService.entidad;
         this.ngOnInit();
       }
-    }  
+    }
   }
 
   async deleteEntidad(entidad: Entidad) {
@@ -210,7 +210,7 @@ export class EntidadesComponent implements OnInit {
   async getContactos() {
     const contactosDeEntidades: string[] = [];
     this.entidadesSelected.filter(entidad => { contactosDeEntidades.push(entidad.id_entidad.toString()); });
-  
+
     if (contactosDeEntidades.length > 0) {
       const RESPONSE = await this.entidadesService.getContactos(contactosDeEntidades).toPromise();
 
@@ -302,7 +302,7 @@ export class EntidadesComponent implements OnInit {
           zonas: ZONA,
         }
       });
-      
+
       const RESULT = await dialogRef.afterClosed().toPromise();
       await this.getEntidades();
       /*

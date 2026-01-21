@@ -12,6 +12,8 @@ const ENDPOINT = 'entidad';
 })
 export class EntidadesService {
 
+  //
+
   entidades: Entidad[];
   entidad: Entidad;
 

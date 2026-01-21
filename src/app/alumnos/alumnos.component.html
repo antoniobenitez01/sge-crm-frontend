@@ -1,0 +1,108 @@
+<div class="example-container mat-elevation-z8">
+    <div class="example-table-container">
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" matSort>
+            <ng-container matColumnDef="id_alumno">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="idAlumnoFilter" placeholder="Id">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.id_alumno}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nif_nie">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="alumnoNifFilter" placeholder="NIF / NIE">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.nif_nie}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="alumnoNombreFilter" placeholder="Nombre">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.nombre}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="apellidos">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="alumnoApellidosFilter" placeholder="Apellidos">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.apellidos}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="fecha_nacimiento">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="alumnoFechaFilter" placeholder="Fecha Nacimiento">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.fecha_nacimiento}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="entidad">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="alumnoEntidadFilter" placeholder="Entidad">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.entidad}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="ciclo">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="alumnoCicloFilter" placeholder="Ciclo">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.ciclo}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="curso">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="alumnoCursoFilter" placeholder="Curso">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.curso}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="vacante_asignada">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="alumnoVacanteFilter" placeholder="Vacante Asignada">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let alumnos"> {{alumnos.vacante_asignada}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>
+                    <button mat-icon-button (click)="addAlumno()">
+                        <mat-icon>
+                            add_circle
+                        </mat-icon>
+                    </button>
+                    <mat-checkbox (change)="chooseAllPublicacion($event)" [checked]="isChecked">
+                    </mat-checkbox>
+                </th>
+                <td mat-cell *matCellDef="let alumnos">
+                    <button mat-icon-button (click)="datosAlumno(alumnos)">
+                        <mat-icon>
+                            assignment
+                        </mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="deleteAlumno(alumnos)">
+                        <mat-icon>
+                            delete
+                        </mat-icon>
+        			</button>
+                    <mat-checkbox (change)="chooseEntidad(alumnos.id_alumno, $event)" [checked]="alumnos.checked">
+                    </mat-checkbox>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" [ngClass]="{ 'selected': selection.isSelected(row)}" (click)="selection.select(row)" (dblclick)="datosAlumno(row)"></tr>
+
+        </table>
+    </div>
+    <mat-paginator #paginator [pageSize]="10" [pageSizeOptions]="[5, 10, 25]" (page)="changePage()"></mat-paginator>
+</div>

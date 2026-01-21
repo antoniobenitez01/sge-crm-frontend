@@ -1,0 +1,67 @@
+.mat-column-id_alumno {
+    width: 7% !important;
+    padding-right: 4em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-nif_nie {
+    width: 10% !important;
+    padding-right: 2em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-nombre {
+    width: 9% !important;
+    padding-right: 2.5em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-apellidos {
+    width: 15% !important;
+    padding-right: 0.5em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-fecha_nacimiento {
+    width: 9% !important;
+    padding-right: 2.25em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-entidad {
+    width: 13% !important;
+    padding-right: 0.75em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-ciclo {
+    width: 6% !important;
+    padding-right: 3.75em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-curso {
+    width: 5% !important;
+    padding-right: 4em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-vacante_asignada {
+    width: 14% !important;
+    padding-right: 1em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-actions {
+    width: 11% !important;
+    padding-right: 0em !important;
+    word-wrap: break-word!important;
+}
+
+.selected .mat-cell.blanco {
+    color: rgb(255, 255, 255) !important;
+}
+
+.selected .mat-cell {
+    background-color: #726dfeaf;
+}
