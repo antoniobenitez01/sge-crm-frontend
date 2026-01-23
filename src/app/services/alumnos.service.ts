@@ -15,28 +15,11 @@ export class AlumnosService
 
   constructor(private http: HttpClient, private commonService: CommonService) { }
 
-  setEntidad(alumno: Alumno) {
+  setAlumno(alumno: Alumno) {
     this.alumno = alumno;
   }
 
-  setDatosBasicosAlumno(formAlumno: any) {
-    this.alumno.id_alumno = formAlumno.id_alumno;
-    this.alumno.nif_nie = formAlumno.nif_nie;
-    this.alumno.nombre = formAlumno.nombre;
-    this.alumno.apellidos = formAlumno.apellidos;
-    this.alumno.fecha_nacimiento = formAlumno.fecha_nacimiento;
-    this.alumno.entidad = formAlumno.entidad;
-    this.alumno.ciclo = formAlumno.ciclo;
-    this.alumno.vacante_asignada = formAlumno.vacante_asignada;
-    this.alumno.telefono = formAlumno.telefono;
-    this.alumno.direccion = formAlumno.direccion;
-    this.alumno.cp = formAlumno.cp;
-    this.alumno.localidad = formAlumno.localidad;
-    this.alumno.provincia = formAlumno.provincia;
-    this.alumno.observaciones = formAlumno.observaciones;
-  }
-
-  get(id_alumno : number | string) {
+  getAlumno(id_alumno : number | string) {
     return this.http.get<ApiResponse>(`${URL2_BASE}/alumnos/${id_alumno}`, { headers: this.commonService.headers });
   }
 

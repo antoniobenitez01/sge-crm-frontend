@@ -1,0 +1,84 @@
+<div class="example-container mat-elevation-z8">
+    <div class="example-table-container">
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" matSort>
+            <ng-container matColumnDef="id_vacante">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="idVacanteFilter" placeholder="Id">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let vacantes"> {{vacantes.id_vacante}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="entidad_display">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="vacanteEntidadFilter" placeholder="Entidad">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let vacantes"> {{vacantes.entidad_display}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="ciclo_display">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="vacanteCicloFilter" placeholder="Ciclo">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let vacantes"> {{vacantes.ciclo_display}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="curso">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="vacanteCursoFilter" placeholder="Curso">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let vacantes"> {{vacantes.curso}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="num_vacantes">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="vacanteNumVacantesFilter" placeholder="Nº Vacantes">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let vacantes"> {{vacantes.num_vacantes}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="num_alumnos">
+                <th mat-header-cell *matHeaderCellDef>
+                    <input matInput [formControl]="vacanteNumAlumnosFilter" placeholder="Nº Alumnos">
+                    <span mat-sort-header></span>
+                </th>
+                <td mat-cell *matCellDef="let vacantes"> {{vacantes.num_alumnos}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>
+                    <button mat-icon-button (click)="addVacante()">
+                        <mat-icon>
+                            add_circle
+                        </mat-icon>
+                    </button>
+                    <mat-checkbox (change)="chooseAllPublicacion($event)" [checked]="isChecked">
+                    </mat-checkbox>
+                </th>
+                <td mat-cell *matCellDef="let vacantes">
+                    <button mat-icon-button (click)="editVacante(vacantes)">
+                        <mat-icon>
+                            assignment
+                        </mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="deleteVacante(vacantes)">
+                        <mat-icon>
+                            delete
+                        </mat-icon>
+        			</button>
+                    <mat-checkbox (change)="chooseVacante(vacante.id_vacante, $event)" [checked]="vacantes.checked">
+                    </mat-checkbox>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" [ngClass]="{ 'selected': selection.isSelected(row)}" (click)="selection.select(row)" (dblclick)="editVacante(row)"></tr>
+
+        </table>
+    </div>
+    <mat-paginator #paginator [pageSize]="10" [pageSizeOptions]="[5, 10, 25]" (page)="changePage()"></mat-paginator>
+</div>

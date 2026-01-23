@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Entidad } from 'src/app/shared/interfaces/entidad';
 import { EntidadesService } from 'src/app/services/entidades.service';
@@ -13,11 +13,11 @@ import { AlumnosService } from 'src/app/services/alumnos.service';
 import { Alumno } from 'src/app/shared/interfaces/alumno';
 
 @Component({
-  selector: 'app-add-alumno',
-  templateUrl: './add-alumno.component.html',
-  styleUrls: ['./add-alumno.component.scss']
+  selector: 'app-edit-alumno',
+  templateUrl: './edit-alumno.component.html',
+  styleUrls: ['./edit-alumno.component.scss']
 })
-export class AddAlumnoComponent implements OnInit {
+export class EditAlumnoComponent implements OnInit {
   alumnoForm: FormGroup;
 
   entidades : Entidad[];
@@ -26,7 +26,8 @@ export class AddAlumnoComponent implements OnInit {
 
   ALUMNO: String;
 
-  constructor(public dialogRef: MatDialogRef<AddAlumnoComponent>,
+  constructor(public dialogRef: MatDialogRef<EditAlumnoComponent>,
+    @Inject(MAT_DIALOG_DATA) public alumno: Alumno,
     private snackBar: MatSnackBar,
     private servicioAlumno: AlumnosService,
     private servicioEntidad: EntidadesService,
@@ -37,20 +38,19 @@ export class AddAlumnoComponent implements OnInit {
 
   ngOnInit(): void {
     this.alumnoForm = new FormGroup({
-      nif_nie: new FormControl(null, Validators.required),
-      nombre: new FormControl(null, Validators.required),
-      apellidos: new FormControl(null, Validators.required),
-      fecha_nacimiento: new FormControl(null, Validators.required),
-      entidad: new FormControl(null, Validators.required),
-      ciclo: new FormControl(null, Validators.required),
-      curso: new FormControl(null, Validators.required),
-      vacante_asignada: new FormControl(null),
-      telefono: new FormControl(null, Validators.required),
-      direccion: new FormControl(null),
-      cp: new FormControl(null),
-      localidad: new FormControl(null),
-      provincia: new FormControl(null),
-      observaciones: new FormControl(null)
+      nif_nie: new FormControl(this.alumno?.nif_nie || '', { validators: Validators.required }),
+      nombre: new FormControl(this.alumno?.nombre || '', { validators: Validators.required }),
+      apellidos: new FormControl(this.alumno?.apellidos || '', { validators: Validators.required }),
+      fecha_nacimiento: new FormControl(this.alumno?.fecha_nacimiento || '', { validators: Validators.required }),
+      entidad: new FormControl(this.alumno?.entidad || '', { validators: Validators.required }),
+      ciclo: new FormControl(this.alumno?.ciclo || '', { validators: Validators.required }),
+      curso: new FormControl(this.alumno?.curso || '', { validators: Validators.required }),
+      telefono: new FormControl(this.alumno?.telefono || '', { validators: Validators.required }),
+      direccion: new FormControl(this.alumno?.direccion || ''),
+      cp: new FormControl(this.alumno?.cp || ''),
+      localidad: new FormControl(this.alumno?.localidad || ''),
+      provincia: new FormControl(this.alumno?.provincia || ''),
+      observaciones: new FormControl(this.alumno?.observaciones || '')
     });
 
     this.ALUMNO = ENTIDAD_ALUMNO;
@@ -60,17 +60,20 @@ export class AddAlumnoComponent implements OnInit {
 
   }
 
-  async confirmAdd() {
+  async confirmEdit() {
     if (this.alumnoForm.valid) {
       const formValue = this.alumnoForm.value;
 
       //  --- Conversión de fecha a YYYY-MM-DD
       const alumno : Alumno = {
         ...formValue,
-        fecha_nacimiento : (formValue.fecha_nacimiento as Date).toISOString().split('T')[0]
-      }
+        id_alumno : this.alumno.id_alumno,
+        fecha_nacimiento : formValue.fecha_nacimiento instanceof Date
+          ? (formValue.fecha_nacimiento as Date).toISOString().split('T')[0]
+          : formValue.fecha_nacimiento
+      };
 
-      const RESPONSE = await this.servicioAlumno.addAlumno(alumno).toPromise();
+      const RESPONSE = await this.servicioAlumno.editAlumno(alumno).toPromise();
       if (RESPONSE.ok) {
         this.snackBar.open(RESPONSE.message, CLOSE, { duration: 5000 });
         this.dialogRef.close({ok: RESPONSE.ok, data: RESPONSE.data});

@@ -58,7 +58,7 @@ const routes: Routes = [
     redirectTo: 'home'
   },
   { path: 'alumnos', loadChildren: () => import('./alumnos/alumnos.module').then(m => m.AlumnosModule) },
-  //{ path: 'vacantes', loadChildren: () => import('./vacantes/vacantes.module').then(m => m.VacantesModule) },
+  { path: 'vacantes', loadChildren: () => import('./vacantes/vacantes.module').then(m => m.VacantesModule) },
   { path: 'motivos-reunion', loadChildren: () => import('./motivos-reunion/motivos-reunion.module').then(m => m.MotivosReunionModule) },
   { path: 'modos-reunion', loadChildren: () => import('./modos-reunion/modos-reunion.module').then(m => m.ModosReunionModule) },
   { path: 'zonas', loadChildren: () => import('./zonas/zonas.module').then(m => m.ZonasModule) },

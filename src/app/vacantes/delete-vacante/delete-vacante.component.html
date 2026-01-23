@@ -1,0 +1,14 @@
+<div class="container">
+    <h3 mat-dialog-title>¿Seguro que deseas eliminar este {{VACANTE}}?</h3>
+    <div mat-dialog-content>
+        Id: {{vacante.id_vacante}}
+        <p></p>
+        {{VACANTE}}: {{vacante.entidad_display}}: {{ vacante.num_vacantes }}
+        <p></p>
+    </div>
+
+    <div mat-dialog-actions>
+        <button mat-button id="deleteEntidad" (click)="confirmDelete()">Eliminar {{VACANTE}}</button>
+        <button mat-button id="onNoClick" (click)="onNoClick()" tabindex="-1">Cancelar</button>
+    </div>
+</div>

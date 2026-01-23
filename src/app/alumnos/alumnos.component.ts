@@ -12,14 +12,13 @@ import { EntidadesService } from '../services/entidades.service';
 import { Overlay } from '@angular/cdk/overlay';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AlumnosService } from '../services/alumnos.service';
-import { VacantesService } from '../services/vacantes.service';
 import { Provincia } from '../shared/interfaces/provincia';
 import { Entidad } from '../shared/interfaces/entidad';
 import { CiclosService } from '../services/ciclos.service';
 import { Ciclo } from '../shared/interfaces/ciclo';
-import { DatosAlumnoComponent } from './datos-alumno/datos-alumno.component';
 import { AddAlumnoComponent } from './add-alumno/add-alumno.component';
 import { DeleteAlumnoComponent } from './delete-alumno/delete-alumno.component';
+import { EditAlumnoComponent } from './edit-alumno/edit-alumno.component';
 
 @Component({
   selector: 'app-alumnos',
@@ -56,7 +55,7 @@ export class AlumnosComponent implements OnInit {
   alumno: Alumno;
 
   displayedColumns: string[];
-  private filterValues = { id_alumno: '', nif_nie: '',nombre: '', apellidos: '', fecha_nacimiento: '', entidad: '', ciclo: '', curso: '', vacante_asignada: '' };
+  private filterValues = { id_alumno: '', nif_nie: '',nombre: '', apellidos: '', fecha_nacimiento: '', entidad_display: '', ciclo_display: '', curso: '', vacante_asignada_display: '' };
 
   constructor(
       public dialog: MatDialog,
@@ -77,12 +76,24 @@ export class AlumnosComponent implements OnInit {
     this.permises = RESPONSE.permises;
 
     if (RESPONSE.ok) {
+
+      //
+      const entidades = await this.getEntidades();
+      const ciclos = await this.getCiclos();
+      //
+
       this.alumnosService.alumnos = (RESPONSE.data as Alumno[])
-      .map(alumno => ({
-        ...alumno,
-        vacante_asignada : alumno.vacante_asignada == null ? "Sin Vacante" : alumno.vacante_asignada
-      }));
-      this.displayedColumns = ['id_alumno', 'nif_nie', 'nombre', 'apellidos', 'fecha_nacimiento', 'entidad', 'ciclo', 'curso', 'vacante_asignada', 'actions'];
+      .map(alumno => {
+        let entidad = entidades.find(e => e.id_entidad === alumno.entidad);
+        let ciclo = ciclos.find(c => c.id_ciclo === alumno.ciclo);
+        return {
+          ...alumno,
+          entidad_display : entidad ? entidad.entidad : "Sin Entidad",
+          ciclo_display : ciclo ? ciclo.cod_ciclo : "Sin Ciclo",
+          vacante_asignada_display : alumno.vacante_asignada == null ? "Sin Vacante" : alumno.vacante_asignada.toString()
+        };
+      });
+      this.displayedColumns = ['id_alumno', 'nif_nie', 'nombre', 'apellidos', 'fecha_nacimiento', 'entidad_display', 'ciclo_display', 'curso', 'vacante_asignada_display', 'actions'];
       this.dataSource.data = this.alumnosService.alumnos || [];
       this.dataSource.sort = this.sort;
       this.dataSource.paginator = this.paginator;
@@ -113,28 +124,13 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
-  async datosAlumno(alummo: Alumno) {
-    const ALUMNO = alummo;
-    const ENTIDAD = await this.getEntidades();
-    const CICLO = await this.getCiclos();
-    const PROVINCIA = await this.getProvincias();
-
-    if (ALUMNO) {
-      const dialogRef = this.dialog.open(DatosAlumnoComponent, {
-        width: '70em',
-        maxWidth: '70em',
-        scrollStrategy: this.overlay.scrollStrategies.noop(),
-        disableClose: true,
-        data: {
-          alumno: ALUMNO,
-          entidad : ENTIDAD,
-          ciclo : CICLO,
-          provincias: PROVINCIA,
-        }
-      });
-
-      const RESULT = await dialogRef.afterClosed().toPromise();
-      await this.getEntidades();
+  async editAlumno(alumno: Alumno) {
+    const dialogRef = this.dialog.open(EditAlumnoComponent, { data: alumno, scrollStrategy: this.overlay.scrollStrategies.noop() });
+    const RESULT = await dialogRef.afterClosed().toPromise();
+    if (RESULT) {
+      if (RESULT.ok) {
+        this.ngOnInit();
+      }
     }
   }
 
@@ -177,10 +173,10 @@ export class AlumnosComponent implements OnInit {
         && alumno.nombre.toLowerCase().indexOf(searchTerms.nombre.toLowerCase()) !== -1
         && alumno.apellidos.toLowerCase().indexOf(searchTerms.apellidos.toLowerCase()) !== -1
         && alumno.fecha_nacimiento.toString().toLowerCase().indexOf(searchTerms.fecha_nacimiento.toLowerCase()) !== -1
-        && alumno.entidad.toLowerCase().indexOf(searchTerms.fk_entidad.toLowerCase()) !== -1
-        && alumno.ciclo.toLowerCase().indexOf(searchTerms.fk_ciclo.toLowerCase()) !== -1
+        && alumno.entidad_display.toLowerCase().indexOf(searchTerms.entidad.toLowerCase()) !== -1
+        && alumno.ciclo_display.toLowerCase().indexOf(searchTerms.ciclo.toLowerCase()) !== -1
         && alumno.curso.toString().indexOf(searchTerms.curso) !== -1
-        && alumno.vacante_asignada.toLowerCase().indexOf(searchTerms.fk_vacante.toLowerCase()) !== -1
+        && alumno.vacante_asignada_display.toLowerCase().indexOf(searchTerms.vacante.toLowerCase()) !== -1
         ;
     };
     return filterFunction;
@@ -214,12 +210,12 @@ export class AlumnosComponent implements OnInit {
     });
     this.alumnoEntidadFilter.valueChanges
     .subscribe(value => {
-        this.filterValues.entidad = value;
+        this.filterValues.entidad_display = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
     this.alumnoCicloFilter.valueChanges
     .subscribe(value => {
-        this.filterValues.ciclo = value;
+        this.filterValues.ciclo_display = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
     this.alumnoCursoFilter.valueChanges
@@ -229,13 +225,12 @@ export class AlumnosComponent implements OnInit {
     });
     this.alumnoVacanteFilter.valueChanges
     .subscribe(value => {
-        this.filterValues.vacante_asignada = value;
+        this.filterValues.vacante_asignada_display = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
   }
 
-  chooseEntidad(idAlumno, event) {
-
+  chooseAlumno(idAlumno, event) {
     if (event.checked) {
       this.dataSource.filteredData.filter(alumno => {
 
@@ -252,13 +247,10 @@ export class AlumnosComponent implements OnInit {
         return idAlumno !== alumno.id_alumno;
       });
     }
-
-    //console.log(this.entidadesSelected);
   }
 
   chooseAllPublicacion(event) {
     this.isChecked = event.checked;
-    this.alumnosSelected = this.alumnosSelected; ///?????????????
 
     const min = this.dataSource.paginator.pageSize * this.dataSource.paginator.pageIndex;
     const max = this.dataSource.paginator.pageSize * (this.dataSource.paginator.pageIndex + 1);

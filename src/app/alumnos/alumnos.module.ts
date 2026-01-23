@@ -3,19 +3,18 @@ import { CommonModule } from '@angular/common';
 
 import { CrudMaterialModule } from '../modules/crud-material/crud-material.module';
 import { AlumnosComponent } from './alumnos.component';
-import { AlumnosRoutingModule } from './entidades-routing.module';
+import { AlumnosRoutingModule } from './alumnos-routing.module';
 import { AddAlumnoComponent } from './add-alumno/add-alumno.component';
 import { DeleteAlumnoComponent } from './delete-alumno/delete-alumno.component';
-import { DatosAlumnoModule } from './datos-alumno/datos-alumno.module';
+import { EditAlumnoComponent } from './edit-alumno/edit-alumno.component';
 
 
 @NgModule({
-  declarations: [ AlumnosComponent, AddAlumnoComponent, DeleteAlumnoComponent ],
+  declarations: [ AlumnosComponent, AddAlumnoComponent, DeleteAlumnoComponent, EditAlumnoComponent ],
   imports: [
     CommonModule,
     AlumnosRoutingModule,
     CrudMaterialModule,
-    DatosAlumnoModule
   ]
 })
 export class AlumnosModule { }

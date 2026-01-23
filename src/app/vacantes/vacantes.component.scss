@@ -1,0 +1,49 @@
+.mat-column-id_vacante {
+    width: 7% !important;
+    padding-right: 4em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-entidad_display {
+    width: 15% !important;
+    padding-right: 0.75em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-ciclo_display {
+    width: 18% !important;
+    padding-right: 1em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-curso {
+    width: 10% !important;
+    padding-right: 4em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-num_vacantes {
+    width: 10% !important;
+    padding-right: 4em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-num_alumnos {
+    width: 10% !important;
+    padding-right: 3em !important;
+    word-wrap: break-word!important;
+}
+
+.mat-column-actions {
+    width: 11% !important;
+    padding-right: 0em !important;
+    word-wrap: break-word!important;
+}
+
+.selected .mat-cell.blanco {
+    color: rgb(255, 255, 255) !important;
+}
+
+.selected .mat-cell {
+    background-color: #726dfeaf;
+}

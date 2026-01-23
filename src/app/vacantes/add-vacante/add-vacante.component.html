@@ -1,0 +1,52 @@
+<div class="container">
+    <h3 mat-dialog-title>Añadir {{VACANTE}}</h3>
+
+    <form class="mat-dialog-content" [formGroup]="vacanteForm">
+
+        <div class="form">
+            <mat-form-field>
+                <mat-label>Entidades</mat-label>
+                <mat-select formControlName="entidad" required>
+                    <mat-option *ngFor="let ent of entidades" [value]="ent.id_entidad">
+                        {{ent.entidad}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+
+        <div class="form">
+            <mat-form-field>
+                <mat-label>Ciclos</mat-label>
+                <mat-select formControlName="ciclo" required>
+                    <mat-option *ngFor="let cic of ciclos" [value]="cic.id_ciclo">
+                        {{cic.ciclo}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+
+        <div class="form">
+            <mat-form-field color="accent">
+                <input matInput type="number" placeholder="Curso" formControlName="curso" name="curso" maxlength="10" required>
+            </mat-form-field>
+        </div>
+
+        <div class="form">
+            <mat-form-field color="accent">
+                <input matInput type="number" placeholder="Nº Vacantes" formControlName="num_vacantes" name="num_vacantes" maxlength="500" required>
+            </mat-form-field>
+        </div>
+
+        <div class="form">
+            <mat-form-field color="accent">
+                <input matInput placeholder="Observaciones" formControlName="observaciones" name="observaciones" maxlength="300" required>
+            </mat-form-field>
+        </div>
+
+        <div mat-dialog-actions>
+            <button mat-button id="onSubmit" type="submit" [disabled]="!vacanteForm.valid" (click)="confirmAdd()">Guardar</button>
+            <button mat-button id="onNoClick" (click)="onNoClick()" tabindex="-1">Cancelar</button>
+        </div>
+
+    </form>
+</div>
