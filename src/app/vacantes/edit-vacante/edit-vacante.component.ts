@@ -27,7 +27,9 @@ export class EditVacanteComponent implements OnInit {
   alumnos : Alumno[];
   alumnosAsignados : Alumno[];
   alumnosFiltrados : Alumno[];
+  alumnosOriginales : number[];
   vacantes : Vacante[];
+  vacantesXAlumnos : VacanteXAlumno[];
 
   VACANTE: String;
 
@@ -42,7 +44,7 @@ export class EditVacanteComponent implements OnInit {
 
   ){ }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
 
     this.vacanteForm = new FormGroup({
       entidad: new FormControl(this.vacante?.entidad, Validators.required),
@@ -57,6 +59,7 @@ export class EditVacanteComponent implements OnInit {
     this.getEntidades();
     this.getCiclos();
     this.getAlumnos();
+    this.getAlumnosByVacanteId(this.vacante.id_vacante);
     this.getVacantes();
 
     this.vacanteForm.get('ciclo')?.valueChanges.subscribe(() => this.filterAlumnos());
@@ -78,7 +81,7 @@ export class EditVacanteComponent implements OnInit {
       };
 
       //  - Comprobamos que el número de alumnos seleccionado no es mayor que el número de vacantes
-      const idAlumnos = (this.vacanteForm.value.idAlumnos as number[]) || []; // Si el valor es nulo, por defecto es un array vacío
+      const idAlumnos = this.vacanteForm.value.idAlumnos as number[] || [];
       if(idAlumnos.length > this.vacanteForm.value.num_vacantes){
         this.snackBar.open("El número de Alumnos seleccionado excede el número de Vacantes disponibles.", CLOSE, { duration: 5000 });
         return;
@@ -88,17 +91,24 @@ export class EditVacanteComponent implements OnInit {
         //  Creamos un objeto Vacante X Alumno a partir de la Vacante creada
         //  en base a los Alumnos seleccionados en el Form
         const vacanteCreada = RESPONSE.data as Vacante;
+        const alumnosNuevos = idAlumnos.filter(id => !this.alumnosOriginales.includes(id));
+        const alumnosEliminar = this.alumnosOriginales.filter(id => !idAlumnos.includes(id));
         if(idAlumnos.length > 0){
           await Promise.all(
-            idAlumnos.map( async (idAlumno) => {
+            alumnosNuevos.map( idAlumno => {
               const vacanteXAlumno : VacanteXAlumno = {
                 id_vacante : vacanteCreada.id_vacante,
                 id_alumno : idAlumno
               };
-              this.servicioVacanteXAlumno.addVacanteXAlumno(vacanteXAlumno).subscribe({
-                next: res => console.log(`Alumno Asignado : ${idAlumno}`),
-                error: err => console.error(err)
-              });
+              return this.servicioVacanteXAlumno.addVacanteXAlumno(vacanteXAlumno).toPromise();
+            })
+          );
+          await Promise.all(
+            alumnosEliminar.map( idAlumno => {
+              const relacion = this.vacantesXAlumnos.find( vxa => vxa.id_alumno === idAlumno );
+              if(relacion){
+                return this.servicioVacanteXAlumno.deleteVacanteXAlumno(relacion.id_vacante_x_alumno).toPromise();
+              }
             })
           );
         }
@@ -135,10 +145,21 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
+  async getVacantesXAlumnos(){
+    const RESPONSE = await this.servicioVacanteXAlumno.getAllVacantesXAlumnos().toPromise();
+    if(RESPONSE.ok){
+      this.vacantesXAlumnos = (RESPONSE.data as VacanteXAlumno[]);
+    }
+  }
+
   async getAlumnosByVacanteId(id_vacante : number){
     const RESPONSE = await this.servicioAlumnos.getAlumnosByVacanteId(id_vacante).toPromise();
     if(RESPONSE.ok){
       this.alumnosAsignados = RESPONSE.data as Alumno[];
+      this.alumnosOriginales = this.alumnosAsignados.map( alu => alu.id_alumno );
+      this.vacanteForm.patchValue({
+        idAlumnos : this.alumnosOriginales
+      })
     }
   }
 
