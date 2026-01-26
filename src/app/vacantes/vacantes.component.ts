@@ -52,7 +52,7 @@ export class VacantesComponent implements OnInit {
   vacante: Vacante;
 
   displayedColumns: string[];
-  private filterValues = { id_vacante: '', entidad_display: '', ciclo_display: '', curso: '', num_vacantes: '', num_alumnos: '' };
+  private filterValues = { id_vacante: '', entidad_display: '', ciclo_display: '', curso: '', num_vacantes_display: '', num_alumnos: '' };
 
   constructor(
       public dialog: MatDialog,
@@ -74,26 +74,24 @@ export class VacantesComponent implements OnInit {
 
     if (RESPONSE.ok) {
 
-      //
       const entidades = await this.getEntidades();
       const ciclos = await this.getCiclos();
-      const alumnos = await this.getAlumnos();
-      //
 
-      this.vacantesService.vacantes = (RESPONSE.data as Vacante[])
-      .map(vacante => {
-        let entidad = entidades.find(e => e.id_entidad === vacante.entidad);
-        let ciclo = ciclos.find(c => c.id_ciclo === vacante.ciclo);
-        let numAlumnos = alumnos.filter(alum => alum.vacante_asignada === vacante.id_vacante).length;
-        return {
-          ...vacante,
-          entidad_display : entidad ? entidad.entidad : "Sin Entidad",
-          ciclo_display : ciclo ? ciclo.ciclo : "Sin Ciclo",
-          num_alumnos : numAlumnos,
-          num_vacantes : vacante.num_vacantes - numAlumnos
-        };
-      });
-      this.displayedColumns = ['id_vacante', 'entidad_display', 'ciclo_display', 'curso', 'num_vacantes', 'num_alumnos' ,'actions'];
+      this.vacantesService.vacantes = await Promise.all(
+        (RESPONSE.data as Vacante[]).map(async vacante => {
+          let entidad = entidades.find(e => e.id_entidad === vacante.entidad);
+          let ciclo = ciclos.find(c => c.id_ciclo === vacante.ciclo);
+          let alumnos = await this.getAlumnosByVacanteId(vacante.id_vacante);
+          return {
+            ...vacante,
+            entidad_display: entidad ? entidad.entidad : "Sin Entidad",
+            ciclo_display: ciclo ? ciclo.ciclo : "Sin Ciclo",
+            num_alumnos: alumnos.length,
+            num_vacantes_display: vacante.num_vacantes - alumnos.length
+          };
+        })
+      );
+      this.displayedColumns = ['id_vacante', 'entidad_display', 'ciclo_display', 'curso', 'num_vacantes_display', 'num_alumnos' ,'actions'];
       this.dataSource.data = this.vacantesService.vacantes || [];
       this.dataSource.sort = this.sort;
       this.dataSource.paginator = this.paginator;
@@ -143,8 +141,8 @@ export class VacantesComponent implements OnInit {
     }
   }
 
-  async getAlumnos(){
-    const RESPONSE = await this.alumnosService.getAllAlumnos().toPromise();
+  async getAlumnosByVacanteId(id_vacante : number){
+    const RESPONSE = await this.alumnosService.getAlumnosByVacanteId(id_vacante).toPromise();
     if (RESPONSE.ok){
       return RESPONSE.data as Alumno[];
     }
@@ -172,7 +170,7 @@ export class VacantesComponent implements OnInit {
         && vacante.entidad_display.toLowerCase().indexOf(searchTerms.entidad.toLowerCase()) !== -1
         && vacante.ciclo_display.toLowerCase().indexOf(searchTerms.ciclo.toLowerCase()) !== -1
         && vacante.curso.toString().indexOf(searchTerms.curso) !== -1
-        && vacante.num_vacantes.toString().indexOf(searchTerms.vacante.toLowerCase()) !== -1
+        && vacante.num_vacantes_display.toString().indexOf(searchTerms.vacante.toLowerCase()) !== -1
         && vacante.num_alumnos.toString().indexOf(searchTerms.vacante.toLowerCase()) !== -1;
     };
     return filterFunction;
@@ -201,7 +199,7 @@ export class VacantesComponent implements OnInit {
     });
     this.vacanteNumVacantesFilter.valueChanges
     .subscribe(value => {
-        this.filterValues.num_vacantes = value;
+        this.filterValues.num_vacantes_display = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
     this.vacanteNumAlumnosFilter.valueChanges

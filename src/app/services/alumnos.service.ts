@@ -38,4 +38,8 @@ export class AlumnosService
   deleteAlumno(id_alumno: number|string) {
     return this.http.delete<ApiResponse>(`${URL2_BASE}/alumnos/${id_alumno}`, {headers: this.commonService.headers });
   }
+
+  getAlumnosByVacanteId(id_vacante : number | string){
+    return this.http.get<ApiResponse>(`${URL2_BASE}/vacantes/${id_vacante}/alumnos/`, { headers: this.commonService.headers });
+  }
 }

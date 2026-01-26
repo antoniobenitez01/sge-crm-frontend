@@ -9,5 +9,6 @@ export interface Vacante {
     checked?: boolean;
     entidad_display? : string;
     ciclo_display? : string;
-    num_alumnos : number;
+    num_vacantes_display? : number;
+    num_alumnos? : number;
 }

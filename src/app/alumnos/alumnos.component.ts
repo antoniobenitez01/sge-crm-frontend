@@ -19,6 +19,8 @@ import { Ciclo } from '../shared/interfaces/ciclo';
 import { AddAlumnoComponent } from './add-alumno/add-alumno.component';
 import { DeleteAlumnoComponent } from './delete-alumno/delete-alumno.component';
 import { EditAlumnoComponent } from './edit-alumno/edit-alumno.component';
+import { VacantesService } from '../services/vacantes.service';
+import { Vacante } from '../shared/interfaces/vacante';
 
 @Component({
   selector: 'app-alumnos',
@@ -55,11 +57,12 @@ export class AlumnosComponent implements OnInit {
   alumno: Alumno;
 
   displayedColumns: string[];
-  private filterValues = { id_alumno: '', nif_nie: '',nombre: '', apellidos: '', fecha_nacimiento: '', entidad_display: '', ciclo_display: '', curso: '', vacante_asignada_display: '' };
+  private filterValues = { id_alumno: '', nif_nie: '',nombre: '', apellidos: '', fecha_nacimiento: '', entidad_display: '', ciclo_display: '', curso: '', vacante_asignada: '' };
 
   constructor(
       public dialog: MatDialog,
       private alumnosService: AlumnosService,
+      private vacantesService: VacantesService,
       private entidadesService: EntidadesService,
       private ciclosService : CiclosService,
       private provinciaService: ProvinciasService,
@@ -82,18 +85,27 @@ export class AlumnosComponent implements OnInit {
       const ciclos = await this.getCiclos();
       //
 
-      this.alumnosService.alumnos = (RESPONSE.data as Alumno[])
-      .map(alumno => {
+      this.alumnosService.alumnos = await Promise.all((RESPONSE.data as Alumno[])
+      .map(async alumno => {
         let entidad = entidades.find(e => e.id_entidad === alumno.entidad);
         let ciclo = ciclos.find(c => c.id_ciclo === alumno.ciclo);
+
+        let vacante = await this.getVacanteByAlumnoId(alumno.id_alumno);
+        let vacanteAsignada = "Sin Vacante";
+
+        if(vacante){
+          let vacanteEntidad = entidades.find(ent => ent.id_entidad === vacante.entidad)
+          vacanteAsignada = vacanteEntidad ? vacanteEntidad.entidad : "Sin Entidad";
+        }
+
         return {
           ...alumno,
           entidad_display : entidad ? entidad.entidad : "Sin Entidad",
           ciclo_display : ciclo ? ciclo.cod_ciclo : "Sin Ciclo",
-          vacante_asignada_display : alumno.vacante_asignada == null ? "Sin Vacante" : alumno.vacante_asignada.toString()
+          vacante_asignada : vacanteAsignada
         };
-      });
-      this.displayedColumns = ['id_alumno', 'nif_nie', 'nombre', 'apellidos', 'fecha_nacimiento', 'entidad_display', 'ciclo_display', 'curso', 'vacante_asignada_display', 'actions'];
+      }));
+      this.displayedColumns = ['id_alumno', 'nif_nie', 'nombre', 'apellidos', 'fecha_nacimiento', 'entidad_display', 'ciclo_display', 'curso', 'vacante_asignada', 'actions'];
       this.dataSource.data = this.alumnosService.alumnos || [];
       this.dataSource.sort = this.sort;
       this.dataSource.paginator = this.paginator;
@@ -143,6 +155,13 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
+  async getVacanteByAlumnoId(id_alumno : number){
+    const RESPONSE = await this.vacantesService.getVacanteByAlumnoId(id_alumno).toPromise();
+    if(RESPONSE.ok){
+      return RESPONSE.data as Vacante;
+    }
+  }
+
   async getEntidades(){
     const RESPONSE = await this.entidadesService.getAllEntidades().toPromise();
     if (RESPONSE.ok){
@@ -176,7 +195,7 @@ export class AlumnosComponent implements OnInit {
         && alumno.entidad_display.toLowerCase().indexOf(searchTerms.entidad.toLowerCase()) !== -1
         && alumno.ciclo_display.toLowerCase().indexOf(searchTerms.ciclo.toLowerCase()) !== -1
         && alumno.curso.toString().indexOf(searchTerms.curso) !== -1
-        && alumno.vacante_asignada_display.toLowerCase().indexOf(searchTerms.vacante.toLowerCase()) !== -1
+        && alumno.vacante_asignada.toLowerCase().indexOf(searchTerms.vacante.toLowerCase()) !== -1
         ;
     };
     return filterFunction;
@@ -225,7 +244,7 @@ export class AlumnosComponent implements OnInit {
     });
     this.alumnoVacanteFilter.valueChanges
     .subscribe(value => {
-        this.filterValues.vacante_asignada_display = value;
+        this.filterValues.vacante_asignada = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
   }

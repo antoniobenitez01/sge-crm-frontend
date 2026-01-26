@@ -10,6 +10,7 @@ export const ENTIDAD_TIPO_ENTIDAD = "Tipo de Entidad";
 export const ENTIDAD_CONTACTO = "Contacto";
 export const ENTIDAD_ALUMNO = "Alumno";
 export const ENTIDAD_VACANTE = "Vacante";
+export const ENTIDAD_VACANTEXALUMNO = "Vacante X Alumno";
 export const ENTIDAD_ENTIDAD = "Entidad";
 export const ENTIDAD_REUNION = "Reunión/Evento";
 export const ENTIDAD_ASISTENTE = "Asistente";

@@ -38,8 +38,19 @@
         </div>
 
         <div class="form">
+            <mat-form-field>
+                <mat-label>Alumnos</mat-label>
+                <mat-select formControlName="idAlumnos" multiple>
+                    <mat-option *ngFor="let alu of alumnosFiltrados" [value]="alu.id_alumno">
+                        {{alu.nombre}} {{alu.apellidos}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+
+        <div class="form">
             <mat-form-field color="accent">
-                <input matInput placeholder="Observaciones" formControlName="observaciones" name="observaciones" maxlength="300" required>
+                <input matInput placeholder="Observaciones" formControlName="observaciones" name="observaciones" maxlength="300">
             </mat-form-field>
         </div>
 

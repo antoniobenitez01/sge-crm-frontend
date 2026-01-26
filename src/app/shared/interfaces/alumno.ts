@@ -7,7 +7,6 @@ export interface Alumno {
     entidad: number;
     ciclo: number;
     curso: number;
-    vacante_asignada: number;
     telefono: string;
     direccion: string;
     cp: number;
@@ -17,6 +16,6 @@ export interface Alumno {
 
     checked?: boolean;
     entidad_display? : string;
+    vacante_asignada? : string;
     ciclo_display? : string;
-    vacante_asignada_display? : string;
 }
