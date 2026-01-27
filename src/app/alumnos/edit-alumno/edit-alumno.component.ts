@@ -20,6 +20,7 @@ import { Alumno } from 'src/app/shared/interfaces/alumno';
 export class EditAlumnoComponent implements OnInit {
   alumnoForm: FormGroup;
 
+  alumnos : Alumno[];
   entidades : Entidad[];
   ciclos: Ciclo[];
   provincias: Provincia[];
@@ -57,7 +58,7 @@ export class EditAlumnoComponent implements OnInit {
     this.getEntidades();
     this.getCiclos();
     this.getProvincias();
-
+    this.getAlumnos();
   }
 
   async confirmEdit() {
@@ -70,8 +71,15 @@ export class EditAlumnoComponent implements OnInit {
         id_alumno : this.alumno.id_alumno,
         fecha_nacimiento : formValue.fecha_nacimiento instanceof Date
           ? (formValue.fecha_nacimiento as Date).toISOString().split('T')[0]
-          : formValue.fecha_nacimiento
+          : formValue.fecha_nacimiento,
       };
+
+      //  - Comprobamos duplicados antes de ejecutar el servicio
+      const duplicate = this.alumnos.find( alu => alu.nif_nie === alumno.nif_nie);
+      if(duplicate){
+        this.snackBar.open("Ya existe un Alumno con el mismo DNI", CLOSE, { duration: 5000 });
+        return;
+      }
 
       const RESPONSE = await this.servicioAlumno.editAlumno(alumno).toPromise();
       if (RESPONSE.ok) {
@@ -82,6 +90,13 @@ export class EditAlumnoComponent implements OnInit {
       }
     } else {
       this.snackBar.open(INVALID_FORM, CLOSE, { duration: 5000 });
+    }
+  }
+
+  async getAlumnos(){
+    const RESPONSE = await this.servicioAlumno.getAllAlumnos().toPromise();
+    if (RESPONSE.ok){
+      this.alumnos = (RESPONSE.data as Alumno[]);
     }
   }
 

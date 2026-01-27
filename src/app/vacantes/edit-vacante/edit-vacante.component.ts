@@ -13,6 +13,8 @@ import { AlumnosService } from 'src/app/services/alumnos.service';
 import { Alumno } from 'src/app/shared/interfaces/alumno';
 import { VacanteXAlumno } from 'src/app/shared/interfaces/vacantexalumno';
 import { VacanteXAlumnoService } from 'src/app/services/vacante_x_alumno.service';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-edit-vacante',
@@ -22,14 +24,14 @@ import { VacanteXAlumnoService } from 'src/app/services/vacante_x_alumno.service
 export class EditVacanteComponent implements OnInit {
   vacanteForm: FormGroup;
 
-  entidades : Entidad[];
-  ciclos: Ciclo[];
-  alumnos : Alumno[];
-  alumnosAsignados : Alumno[];
-  alumnosFiltrados : Alumno[];
-  alumnosOriginales : number[];
-  vacantes : Vacante[];
-  vacantesXAlumnos : VacanteXAlumno[];
+  entidades : Entidad[];                                            //  Lista de Entidades
+  ciclos: Ciclo[];                                                  //  Lista de Ciclos
+  alumnos : Alumno[];                                               //  Lista de Alumnos
+  alumnosAsignados : Alumno[];                                      //  Lista de Alumnos seleccionados en el Form
+  alumnosFiltrados : Alumno[];                                      //  Lista de Alumnos filtrados por Ciclo, Curso y Disponibilidad
+  alumnosOriginales : number[];                                     //  Lista de Alumnos originalmente asignados a la Vacante
+  vacantes : Vacante[];                                             //  Lista de Vacantes
+  vacantesXAlumnos : VacanteXAlumno[];                              //  Lista de VacantesXAlumnos
 
   VACANTE: String;
 
@@ -41,10 +43,9 @@ export class EditVacanteComponent implements OnInit {
     private servicioEntidad: EntidadesService,
     private servicioCiclo : CiclosService,
     private servicioVacanteXAlumno : VacanteXAlumnoService
-
   ){ }
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit() {
 
     this.vacanteForm = new FormGroup({
       entidad: new FormControl(this.vacante?.entidad, Validators.required),
@@ -61,9 +62,10 @@ export class EditVacanteComponent implements OnInit {
     this.getAlumnos();
     this.getAlumnosByVacanteId(this.vacante.id_vacante);
     this.getVacantes();
+    this.getVacantesXAlumnos();
 
-    this.vacanteForm.get('ciclo')?.valueChanges.subscribe(() => this.filterAlumnos());
-    this.vacanteForm.get('curso')?.valueChanges.subscribe(() => this.filterAlumnos());
+    this.vacanteForm.get('ciclo')?.valueChanges.subscribe(() => this.filterAlumnos());    //  Subscripción de cambios en tiempo real en Form de Ciclo
+    this.vacanteForm.get('curso')?.valueChanges.subscribe(() => this.filterAlumnos());    //  Subscripción de cambios en tiempo real en Form de Curso
   }
 
   async confirmEdit() {
@@ -86,31 +88,43 @@ export class EditVacanteComponent implements OnInit {
         this.snackBar.open("El número de Alumnos seleccionado excede el número de Vacantes disponibles.", CLOSE, { duration: 5000 });
         return;
       }
+
       const RESPONSE = await this.servicioVacantes.editVacante(vacante).toPromise();
       if (RESPONSE.ok) {
+
         //  Creamos un objeto Vacante X Alumno a partir de la Vacante creada
         //  en base a los Alumnos seleccionados en el Form
         const vacanteCreada = RESPONSE.data as Vacante;
-        const alumnosNuevos = idAlumnos.filter(id => !this.alumnosOriginales.includes(id));
-        const alumnosEliminar = this.alumnosOriginales.filter(id => !idAlumnos.includes(id));
-        if(idAlumnos.length > 0){
+        const alumnosNuevos = idAlumnos.filter(id => !this.alumnosOriginales.includes(id));           //  Lista de Alumnos a añadir
+        const alumnosEliminar = this.alumnosOriginales.filter(id => !idAlumnos.includes(id));         //  Lista de Alumnos a eliminar
+
+        if(idAlumnos){
+
+          // Esperamos a que se realize la insercción de los Alumnos a añadir
           await Promise.all(
             alumnosNuevos.map( idAlumno => {
+              //  --- Creamos nuevo objeto VacanteXAlumno
               const vacanteXAlumno : VacanteXAlumno = {
                 id_vacante : vacanteCreada.id_vacante,
                 id_alumno : idAlumno
               };
+              //  --- Lo añadimos a la Base de Datos
               return this.servicioVacanteXAlumno.addVacanteXAlumno(vacanteXAlumno).toPromise();
             })
           );
+
+          // Esperamos a que se realize la eliminación de los Alumnos a eliminar
           await Promise.all(
             alumnosEliminar.map( idAlumno => {
+              //  --- Encontramos objeto VacanteXAlumno con el mismo id_alumno
               const relacion = this.vacantesXAlumnos.find( vxa => vxa.id_alumno === idAlumno );
+              //  --- Si existe, lo eliminamos de la Base de Datos
               if(relacion){
                 return this.servicioVacanteXAlumno.deleteVacanteXAlumno(relacion.id_vacante_x_alumno).toPromise();
               }
             })
           );
+
         }
         this.snackBar.open(RESPONSE.message, CLOSE, { duration: 5000 });
         this.dialogRef.close({ok: RESPONSE.ok, data: RESPONSE.data});
@@ -123,6 +137,7 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
+  //  GET ENTIDADES - Recogemos todas las Entidades de la Base de Datos
   async getEntidades(){
     const RESPONSE = await this.servicioEntidad.getAllEntidades().toPromise();
     if (RESPONSE.ok){
@@ -130,6 +145,7 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
+  //  GET CICLOS - Recogemos todos los Ciclos de la Base de Datos
   async getCiclos(){
     const RESPONSE = await this.servicioCiclo.getAllCiclos().toPromise();
     if (RESPONSE.ok){
@@ -137,6 +153,7 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
+  //  GET ALUMNOS - Recogemos todos los Alumnos de la Base de Datos y los filtramos por Ciclo, Curso y Disponibilidad
   async getAlumnos(){
     const RESPONSE = await this.servicioAlumnos.getAllAlumnos().toPromise();
     if(RESPONSE.ok){
@@ -145,6 +162,7 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
+  //  GET VACANTESXALUMNOS - Recogemos todas las relaciones VacantesXAlumnos de la Base de Datos
   async getVacantesXAlumnos(){
     const RESPONSE = await this.servicioVacanteXAlumno.getAllVacantesXAlumnos().toPromise();
     if(RESPONSE.ok){
@@ -152,6 +170,7 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
+  //  GET ALUMNOS BY VACANTE ID - Recogemos todos los Alumnos asignados a una id_vacante de la Base de Datos
   async getAlumnosByVacanteId(id_vacante : number){
     const RESPONSE = await this.servicioAlumnos.getAlumnosByVacanteId(id_vacante).toPromise();
     if(RESPONSE.ok){
@@ -163,6 +182,12 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
+  getVacanteByAlumnoId(id_alumno : number){
+    return this.servicioVacanteXAlumno.getVacanteXAlumnoByAlumnoId(id_alumno)
+    .pipe( catchError( error => of(undefined)));
+  }
+
+  //  GET VACANTES - Recogemos todas las Vacantes de la Base de Datos
   async getVacantes(){
     const RESPONSE = await this.servicioVacantes.getAllVacantes().toPromise();
     if (RESPONSE.ok){
@@ -170,13 +195,15 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
+  // FILTER ALUMNOS - Filtramos this.alumnos por Curso, Ciclo y Disponibilidad
   filterAlumnos() {
     const selectedCiclo = this.vacanteForm.get('ciclo')?.value;
     const selectedCurso = this.vacanteForm.get('curso')?.value;
-
     if (selectedCiclo && selectedCurso && this.alumnos) {
-      this.alumnosFiltrados = this.alumnos.filter(
-        alumno => alumno.ciclo === selectedCiclo && alumno.curso === selectedCurso
+      this.alumnosFiltrados = this.alumnos.filter(alumno =>
+        alumno.ciclo === selectedCiclo
+        && alumno.curso === selectedCurso
+        && this.getVacanteByAlumnoId(alumno.id_alumno) == undefined
       );
 
       if (this.alumnosFiltrados.length > 0) {

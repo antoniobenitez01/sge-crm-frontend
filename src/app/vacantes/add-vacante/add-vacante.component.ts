@@ -13,6 +13,8 @@ import { AlumnosService } from 'src/app/services/alumnos.service';
 import { Alumno } from 'src/app/shared/interfaces/alumno';
 import { VacanteXAlumno } from 'src/app/shared/interfaces/vacantexalumno';
 import { VacanteXAlumnoService } from 'src/app/services/vacante_x_alumno.service';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-add-vacante',
@@ -145,13 +147,20 @@ export class AddVacanteComponent implements OnInit {
     }
   }
 
+  getVacanteByAlumnoId(id_alumno : number){
+    return this.servicioVacanteXAlumno.getVacanteXAlumnoByAlumnoId(id_alumno)
+    .pipe( catchError( error => of(undefined)));
+  }
+
   filterAlumnos() {
     const selectedCiclo = this.vacanteForm.get('ciclo')?.value;
     const selectedCurso = this.vacanteForm.get('curso')?.value;
 
     if (selectedCiclo && selectedCurso && this.alumnos) {
-      this.alumnosFiltrados = this.alumnos.filter(
-        alumno => alumno.ciclo === selectedCiclo && alumno.curso === selectedCurso
+      this.alumnosFiltrados = this.alumnos.filter( alumno =>
+        alumno.ciclo === selectedCiclo
+        && alumno.curso === selectedCurso
+        && this.getVacanteByAlumnoId(alumno.id_alumno) == undefined
       );
 
       if (this.alumnosFiltrados.length > 0) {
