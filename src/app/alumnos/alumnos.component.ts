@@ -34,38 +34,41 @@ export class AlumnosComponent implements OnInit {
 
   dataSource: MatTableDataSource<Alumno> = new MatTableDataSource();
 
-  idAlumnoFilter = new FormControl();
-  alumnoNifFilter = new FormControl();
-  alumnoNombreFilter = new FormControl();
-  alumnoApellidosFilter = new FormControl();
-  alumnoFechaFilter = new FormControl();
-  alumnoEntidadFilter = new FormControl();
-  alumnoCicloFilter = new FormControl();
-  alumnoCursoFilter = new FormControl();
-  alumnoVacanteFilter = new FormControl();
+  //  VARIABLES DE FILTRO
+  idAlumnoFilter = new FormControl();                 //  id_alumno
+  alumnoNifFilter = new FormControl();                //  nif_nie
+  alumnoNombreFilter = new FormControl();             //  nombre
+  alumnoApellidosFilter = new FormControl();          //  apellidos
+  alumnoFechaFilter = new FormControl();              //  fecha_nacimiento
+  alumnoEntidadFilter = new FormControl();            //  entidad
+  alumnoCicloFilter = new FormControl();              //  ciclo
+  alumnoCursoFilter = new FormControl();              //  curso
+  alumnoVacanteFilter = new FormControl();            //  vacante_asignada
 
+  //  VARIABLES DE SELECCIÓN
   alumnosSelected: Alumno[] = [];
+  selection: SelectionModel<Alumno>;
 
+  //  VARIABLES PAGINATOR
   isChecked = false;
   isCheckedAll = false;
   pageSizeChecked: number;
   pageIndexChecked: number;
 
-  permises: Permises;
-
-  selection: SelectionModel<Alumno>;
+  //  VARIABLES DATOS Y PERMISOS
   alumno: Alumno;
+  permises: Permises;
 
   displayedColumns: string[];
   private filterValues = { id_alumno: '', nif_nie: '',nombre: '', apellidos: '', fecha_nacimiento: '', entidad_display: '', ciclo_display: '', curso: '', vacante_asignada: '' };
 
   constructor(
       public dialog: MatDialog,
-      private alumnosService: AlumnosService,
-      private vacantesService: VacantesService,
-      private entidadesService: EntidadesService,
-      private ciclosService : CiclosService,
-      private provinciaService: ProvinciasService,
+      private alumnosService: AlumnosService,         //  SERVICIO - Alumnos
+      private vacantesService: VacantesService,       //  SERVICIO - Vacantes
+      private entidadesService: EntidadesService,     //  SERVICIO - Entidades
+      private ciclosService : CiclosService,          //  SERVICIO - Ciclos
+      private provinciaService: ProvinciasService,    //  SERVICIO - Provincias
       private overlay: Overlay,
       private snackBar: MatSnackBar,
   ) { }
@@ -74,37 +77,40 @@ export class AlumnosComponent implements OnInit {
     this.getAlumnos();
   }
 
+  //  GET ALUMNOS - Recogida de Alumnos en BBDD y ajuste de objeto para visualización en tabla
   async getAlumnos() {
     const RESPONSE = await this.alumnosService.getAllAlumnos().toPromise();
     this.permises = RESPONSE.permises;
 
     if (RESPONSE.ok) {
 
-      //
-      const entidades = await this.getEntidades();
-      const ciclos = await this.getCiclos();
-      //
+      const entidades = await this.getEntidades();                                        //  Recogida de Entidades en BBDD
+      const ciclos = await this.getCiclos();                                              //  Recogida de Ciclos en BBDD
 
       this.alumnosService.alumnos = await Promise.all((RESPONSE.data as Alumno[])
       .map(async alumno => {
-        let entidad = entidades.find(e => e.id_entidad === alumno.entidad);
-        let ciclo = ciclos.find(c => c.id_ciclo === alumno.ciclo);
 
-        let vacante = await this.getVacanteByAlumnoId(alumno.id_alumno);
+        let entidad = entidades.find(e => e.id_entidad === alumno.entidad);               //  Búsqueda de Entidad con misma id_entidad
+        let ciclo = ciclos.find(c => c.id_ciclo === alumno.ciclo);                        //  Búsqueda de Ciclo con mismo id_ciclo
+        let vacante = await this.getVacanteByAlumnoId(alumno.id_alumno);                  //  Búsqueda de Vacante asignada a Alumno
+
         let vacanteAsignada = "Sin Vacante";
-
+        //  (Si Alumno tuviese Vacante asignada) - Búsqueda de Nombre de Entidad de Vacante asignada a Alumno
         if(vacante){
           let vacanteEntidad = entidades.find(ent => ent.id_entidad === vacante.entidad)
           vacanteAsignada = vacanteEntidad ? vacanteEntidad.entidad : "Sin Entidad";
         }
 
         return {
+          //  Asignación de Valores para Visualización en Tabla de Alumnos
           ...alumno,
-          entidad_display : entidad ? entidad.entidad : "Sin Entidad",
-          ciclo_display : ciclo ? ciclo.cod_ciclo : "Sin Ciclo",
-          vacante_asignada : vacanteAsignada
+          entidad_display : entidad ? entidad.entidad : "Sin Entidad",                    //  Nombre de Entidad -> entidad_display
+          ciclo_display : ciclo ? ciclo.cod_ciclo : "Sin Ciclo",                          //  Nombre de Ciclo -> ciclo_displ
+          vacante_asignada : vacanteAsignada                                              //  Nombre en Entidad en Vacante Asignada
         };
+
       }));
+
       this.displayedColumns = ['id_alumno', 'nif_nie', 'nombre', 'apellidos', 'fecha_nacimiento', 'entidad_display', 'ciclo_display', 'curso', 'vacante_asignada', 'actions'];
       this.dataSource.data = this.alumnosService.alumnos || [];
       this.dataSource.sort = this.sort;
@@ -116,6 +122,7 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
+  //  ADD ALUMNO -  Apertura de Dialog 'AddAlumnoComponent'
   async addAlumno() {
     const dialogRef = this.dialog.open(AddAlumnoComponent, { scrollStrategy: this.overlay.scrollStrategies.noop(), disableClose: true });
     const RESULT = await dialogRef.afterClosed().toPromise();
@@ -126,6 +133,7 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
+  //  DELETE ALUMNO - Apertura de Dialog 'DeleteAlumnoComponent' con datos de Alumno
   async deleteAlumno(alumno: Alumno) {
     const dialogRef = this.dialog.open(DeleteAlumnoComponent, { data: alumno, scrollStrategy: this.overlay.scrollStrategies.noop() });
     const RESULT = await dialogRef.afterClosed().toPromise();
@@ -136,6 +144,7 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
+  //  EDIT ALUMNO - Apertura de Dialog 'EditAlumnoComponent' con datos de Alumno
   async editAlumno(alumno: Alumno) {
     const dialogRef = this.dialog.open(EditAlumnoComponent, { data: alumno, scrollStrategy: this.overlay.scrollStrategies.noop() });
     const RESULT = await dialogRef.afterClosed().toPromise();
@@ -146,15 +155,7 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
-  changePage() {
-    if (this.isCheckedAll) {
-      this.isChecked = true;
-    } else {
-      this.isChecked = (((this.pageIndexChecked + 1) * this.pageSizeChecked) /
-      ((this.dataSource.paginator.pageIndex + 1) * this.dataSource.paginator.pageSize)) >= 1;
-    }
-  }
-
+  //  GET VACANTE BY ALUMNO ID - Recogida de Vacante en BBDD asignados a un Alumno con id_alumno
   async getVacanteByAlumnoId(id_alumno : number){
     const RESPONSE = await this.vacantesService.getVacanteByAlumnoId(id_alumno).toPromise();
     if(RESPONSE.ok){
@@ -162,6 +163,7 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
+  //  GET ENTIDADES - Recogida de Entidades en BBDD
   async getEntidades(){
     const RESPONSE = await this.entidadesService.getAllEntidades().toPromise();
     if (RESPONSE.ok){
@@ -169,6 +171,7 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
+  //  GET CICLOS - Recogida de Ciclos en BBDD
   async getCiclos(){
     const RESPONSE = await this.ciclosService.getAllCiclos().toPromise();
     if (RESPONSE.ok){
@@ -176,6 +179,7 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
+  //  GET PROVINCIAS - Recogida de Provincias en BBDD
   async getProvincias(){
     const RESPONSE = await this.provinciaService.getAllProvincias().toPromise();
     if (RESPONSE.ok){
@@ -183,6 +187,7 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
+  // CREATE FILTER - Creación de Filtros de Tabla de Alumnos
   createFilter(): (alumno: Alumno, filter: string) => boolean {
     const filterFunction = (alumno: Alumno, filter: string): boolean => {
       const searchTerms = JSON.parse(filter);
@@ -201,54 +206,66 @@ export class AlumnosComponent implements OnInit {
     return filterFunction;
   }
 
+  //  ON CHANGES - Subscripción a Cambios en Filtros de Tabla de Alumnos
   onChanges() {
-    this.idAlumnoFilter.valueChanges
+    this.idAlumnoFilter.valueChanges                                  //  id_alumno
     .subscribe(value => {
         this.filterValues.id_alumno = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
-    this.alumnoNifFilter.valueChanges
+    this.alumnoNifFilter.valueChanges                                 //  nif_nie
     .subscribe(value => {
         this.filterValues.nif_nie = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
-    this.alumnoNombreFilter.valueChanges
+    this.alumnoNombreFilter.valueChanges                              //  nombre
     .subscribe(value => {
         this.filterValues.nombre = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
-    this.alumnoApellidosFilter.valueChanges
+    this.alumnoApellidosFilter.valueChanges                           //  apellidos
     .subscribe(value => {
         this.filterValues.apellidos = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
-    this.alumnoFechaFilter.valueChanges
+    this.alumnoFechaFilter.valueChanges                               //  fecha
     .subscribe(value => {
         this.filterValues.fecha_nacimiento = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
-    this.alumnoEntidadFilter.valueChanges
+    this.alumnoEntidadFilter.valueChanges                             //  entidad
     .subscribe(value => {
         this.filterValues.entidad_display = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
-    this.alumnoCicloFilter.valueChanges
+    this.alumnoCicloFilter.valueChanges                               //  ciclo
     .subscribe(value => {
         this.filterValues.ciclo_display = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
-    this.alumnoCursoFilter.valueChanges
+    this.alumnoCursoFilter.valueChanges                               //  curso
     .subscribe(value => {
         this.filterValues.curso = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
-    this.alumnoVacanteFilter.valueChanges
+    this.alumnoVacanteFilter.valueChanges                             //  vacante
     .subscribe(value => {
         this.filterValues.vacante_asignada = value;
         this.dataSource.filter = JSON.stringify(this.filterValues);
     });
   }
 
+  //  CHANGE PAGE - Cambio de página Paginator
+  changePage() {
+    if (this.isCheckedAll) {
+      this.isChecked = true;
+    } else {
+      this.isChecked = (((this.pageIndexChecked + 1) * this.pageSizeChecked) /
+      ((this.dataSource.paginator.pageIndex + 1) * this.dataSource.paginator.pageSize)) >= 1;
+    }
+  }
+
+  // CHOOSE ALUMNO - Selección de Alumno en Tabla de Vacantes
   chooseAlumno(idAlumno, event) {
     if (event.checked) {
       this.dataSource.filteredData.filter(alumno => {
@@ -268,7 +285,8 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
-  chooseAllPublicacion(event) {
+  // CHOOSE ALL ALUMNOS - Selección de Todas las Alumnos en Tabla de Vacantes
+  chooseAllAlumnos(event) {
     this.isChecked = event.checked;
 
     const min = this.dataSource.paginator.pageSize * this.dataSource.paginator.pageIndex;
@@ -291,7 +309,7 @@ export class AlumnosComponent implements OnInit {
       });
 
       if (this.alumnosSelected.length < this.dataSource.filteredData.length) {
-        this.openSnackbarChooseAllPublicacion();
+        this.openSnackbarChooseAllAlumnos();
       }
     } else {
 
@@ -308,7 +326,8 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
-  openSnackbarChooseAllPublicacion() {
+  // OPEN SNACKBAR CHOOSE ALL ALUMNOS - Apertura de Snackbar al Seleccionar todas las Alumnos en Tabla de Alumnos
+  openSnackbarChooseAllAlumnos() {
     const snackBarRef = this.snackBar.open(
       `Deseas Seleccionar los ${this.dataSource.filteredData.length} resultados`,
       'Seleccionar',

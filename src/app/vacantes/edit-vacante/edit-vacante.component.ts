@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Entidad } from 'src/app/shared/interfaces/entidad';
@@ -13,8 +13,6 @@ import { AlumnosService } from 'src/app/services/alumnos.service';
 import { Alumno } from 'src/app/shared/interfaces/alumno';
 import { VacanteXAlumno } from 'src/app/shared/interfaces/vacantexalumno';
 import { VacanteXAlumnoService } from 'src/app/services/vacante_x_alumno.service';
-import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
 
 @Component({
   selector: 'app-edit-vacante',
@@ -38,14 +36,14 @@ export class EditVacanteComponent implements OnInit {
   constructor(public dialogRef: MatDialogRef<EditVacanteComponent>,
     @Inject(MAT_DIALOG_DATA) public vacante: Vacante,
     private snackBar: MatSnackBar,
-    private servicioAlumnos : AlumnosService,
-    private servicioVacantes : VacantesService,
-    private servicioEntidad: EntidadesService,
-    private servicioCiclo : CiclosService,
-    private servicioVacanteXAlumno : VacanteXAlumnoService
+    private servicioAlumnos : AlumnosService,                       //  SERVICIO - Alumnos
+    private servicioVacantes : VacantesService,                     //  SERVICIO - Vacantes
+    private servicioEntidad: EntidadesService,                      //  SERVICIO - Entidades
+    private servicioCiclo : CiclosService,                          //  SERVICIO - Ciclos
+    private servicioVacanteXAlumno : VacanteXAlumnoService          //  SERVICIO - VacanteXAlumno
   ){ }
 
-  ngOnInit() {
+  async ngOnInit() {
 
     this.vacanteForm = new FormGroup({
       entidad: new FormControl(this.vacante?.entidad, Validators.required),
@@ -57,17 +55,22 @@ export class EditVacanteComponent implements OnInit {
     });
 
     this.VACANTE = ENTIDAD_VACANTE;
-    this.getEntidades();
-    this.getCiclos();
-    this.getAlumnos();
-    this.getAlumnosByVacanteId(this.vacante.id_vacante);
-    this.getVacantes();
-    this.getVacantesXAlumnos();
+    await Promise.all([
+      this.getEntidades(),
+      this.getCiclos(),
+      this.getAlumnos(),
+      this.getAlumnosByVacanteId(this.vacante.id_vacante),
+      this.getVacantes(),
+      this.getVacantesXAlumnos()
+    ]);
+
+    this.filterAlumnos();
 
     this.vacanteForm.get('ciclo')?.valueChanges.subscribe(() => this.filterAlumnos());    //  Subscripción de cambios en tiempo real en Form de Ciclo
     this.vacanteForm.get('curso')?.valueChanges.subscribe(() => this.filterAlumnos());    //  Subscripción de cambios en tiempo real en Form de Curso
   }
 
+  //  CONFIRM EDIT - Proceso de Actualización de Vacante junto a la creación y eliminación de VacantesXAlumnos asignados
   async confirmEdit() {
     if (this.vacanteForm.valid) {
 
@@ -89,46 +92,48 @@ export class EditVacanteComponent implements OnInit {
         return;
       }
 
+      //  --- HTTP REQUEST : Edit Vacante
       const RESPONSE = await this.servicioVacantes.editVacante(vacante).toPromise();
       if (RESPONSE.ok) {
 
-        //  Creamos un objeto Vacante X Alumno a partir de la Vacante creada
-        //  en base a los Alumnos seleccionados en el Form
-        const vacanteCreada = RESPONSE.data as Vacante;
+        const vacanteCreada = RESPONSE.data as Vacante;                                               //  Vacante creada con exito
         const alumnosNuevos = idAlumnos.filter(id => !this.alumnosOriginales.includes(id));           //  Lista de Alumnos a añadir
         const alumnosEliminar = this.alumnosOriginales.filter(id => !idAlumnos.includes(id));         //  Lista de Alumnos a eliminar
 
         if(idAlumnos){
 
-          // Esperamos a que se realize la insercción de los Alumnos a añadir
+          //  Proceso de inserción de alumnosNuevos
           await Promise.all(
             alumnosNuevos.map( idAlumno => {
-              //  --- Creamos nuevo objeto VacanteXAlumno
+              //  --- Creación nuevo objeto VacanteXAlumno
               const vacanteXAlumno : VacanteXAlumno = {
                 id_vacante : vacanteCreada.id_vacante,
                 id_alumno : idAlumno
               };
-              //  --- Lo añadimos a la Base de Datos
+              //  --- HTTP REQUEST : Add VacanteXAlumno
               return this.servicioVacanteXAlumno.addVacanteXAlumno(vacanteXAlumno).toPromise();
             })
           );
 
-          // Esperamos a que se realize la eliminación de los Alumnos a eliminar
+          //  Proceso de eliminación de alumnosEliminar
           await Promise.all(
             alumnosEliminar.map( idAlumno => {
-              //  --- Encontramos objeto VacanteXAlumno con el mismo id_alumno
+              //  --- Búsqueda objeto VacanteXAlumno con el mismo id_alumno
               const relacion = this.vacantesXAlumnos.find( vxa => vxa.id_alumno === idAlumno );
-              //  --- Si existe, lo eliminamos de la Base de Datos
               if(relacion){
+                //  --- HTTP REQUEST : Delete VacanteXAlumno
                 return this.servicioVacanteXAlumno.deleteVacanteXAlumno(relacion.id_vacante_x_alumno).toPromise();
               }
             })
           );
 
         }
+        //  Si todo ha funcionado de forma correcta, mostramos el mensaje recibido
+        //  y cerramos nuestro Dialog de Añadir Vacante
         this.snackBar.open(RESPONSE.message, CLOSE, { duration: 5000 });
         this.dialogRef.close({ok: RESPONSE.ok, data: RESPONSE.data});
       } else {
+        //  Mostramos el mensaje recibido si RESPONSE no es OK
         this.snackBar.open(RESPONSE.message, CLOSE, { duration: 5000 });
       }
 
@@ -137,7 +142,7 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
-  //  GET ENTIDADES - Recogemos todas las Entidades de la Base de Datos
+  //  GET ENTIDADES - Recogida de Entidades en BBDD
   async getEntidades(){
     const RESPONSE = await this.servicioEntidad.getAllEntidades().toPromise();
     if (RESPONSE.ok){
@@ -145,7 +150,7 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
-  //  GET CICLOS - Recogemos todos los Ciclos de la Base de Datos
+  //  GET CICLOS - Recogida de Ciclos en BBDD
   async getCiclos(){
     const RESPONSE = await this.servicioCiclo.getAllCiclos().toPromise();
     if (RESPONSE.ok){
@@ -153,16 +158,23 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
-  //  GET ALUMNOS - Recogemos todos los Alumnos de la Base de Datos y los filtramos por Ciclo, Curso y Disponibilidad
+  //  GET ALUMNOS - Recogida de Alumnos en BBDD
   async getAlumnos(){
     const RESPONSE = await this.servicioAlumnos.getAllAlumnos().toPromise();
     if(RESPONSE.ok){
       this.alumnos = (RESPONSE.data as Alumno[]);
-      this.filterAlumnos();
     }
   }
 
-  //  GET VACANTESXALUMNOS - Recogemos todas las relaciones VacantesXAlumnos de la Base de Datos
+  //  GET VACANTES - Recogida de Vacantes en BBDD
+  async getVacantes(){
+    const RESPONSE = await this.servicioVacantes.getAllVacantes().toPromise();
+    if (RESPONSE.ok){
+      this.vacantes = (RESPONSE.data as Vacante[]);
+    }
+  }
+
+  //  GET VACANTESXALUMNOS - Recogida de relaciones VacantesXAlumnos en BBDD
   async getVacantesXAlumnos(){
     const RESPONSE = await this.servicioVacanteXAlumno.getAllVacantesXAlumnos().toPromise();
     if(RESPONSE.ok){
@@ -170,7 +182,7 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
-  //  GET ALUMNOS BY VACANTE ID - Recogemos todos los Alumnos asignados a una id_vacante de la Base de Datos
+  //  GET ALUMNOS BY VACANTE ID - Recogida de Alumnos en BBDD asignados a una Vacante con id_vacante
   async getAlumnosByVacanteId(id_vacante : number){
     const RESPONSE = await this.servicioAlumnos.getAlumnosByVacanteId(id_vacante).toPromise();
     if(RESPONSE.ok){
@@ -182,36 +194,28 @@ export class EditVacanteComponent implements OnInit {
     }
   }
 
-  getVacanteByAlumnoId(id_alumno : number){
-    return this.servicioVacanteXAlumno.getVacanteXAlumnoByAlumnoId(id_alumno)
-    .pipe( catchError( error => of(undefined)));
-  }
-
-  //  GET VACANTES - Recogemos todas las Vacantes de la Base de Datos
-  async getVacantes(){
-    const RESPONSE = await this.servicioVacantes.getAllVacantes().toPromise();
-    if (RESPONSE.ok){
-      this.vacantes = (RESPONSE.data as Vacante[]);
-    }
-  }
-
   // FILTER ALUMNOS - Filtramos this.alumnos por Curso, Ciclo y Disponibilidad
   filterAlumnos() {
+
     const selectedCiclo = this.vacanteForm.get('ciclo')?.value;
     const selectedCurso = this.vacanteForm.get('curso')?.value;
+
     if (selectedCiclo && selectedCurso && this.alumnos) {
+
       this.alumnosFiltrados = this.alumnos.filter(alumno =>
-        alumno.ciclo === selectedCiclo
-        && alumno.curso === selectedCurso
-        && this.getVacanteByAlumnoId(alumno.id_alumno) == undefined
+        alumno.ciclo === selectedCiclo                                                            //  Filtro por Ciclo
+        && alumno.curso === selectedCurso                                                         //  Filtro por Curso
+        && this.vacantesXAlumnos.filter( vxa => vxa.id_alumno === alumno.id_alumno && vxa.id_vacante != this.vacante.id_vacante ).length == 0
       );
 
+      //  Si encontramos Alumnos Filtrados, activamos el Menú Dropdown
       if (this.alumnosFiltrados.length > 0) {
         this.vacanteForm.get('idAlumnos')?.enable();
       } else {
         this.vacanteForm.get('idAlumnos')?.disable();
       }
     } else {
+      //  Por defecto, Alumnos Filtrados está vacío y el Menú Dropdwon desactivado
       this.alumnosFiltrados = [];
       this.vacanteForm.get('idAlumnos')?.disable();
     }

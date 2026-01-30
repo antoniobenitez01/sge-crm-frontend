@@ -1,57 +1,73 @@
+//*  =================================
+//*    ESTILOS DE TABLA DE ALUMNOS
+//*  =================================
+
+// COLUMNAS  --- --- ---
+
+//?  ID VACANTE
 .mat-column-id_alumno {
     width: 7% !important;
     padding-right: 4em !important;
     word-wrap: break-word!important;
 }
 
+//?  NIF / NIE
 .mat-column-nif_nie {
     width: 10% !important;
     padding-right: 2em !important;
     word-wrap: break-word!important;
 }
 
+//?  NOMBRE
 .mat-column-nombre {
     width: 9% !important;
     padding-right: 2.5em !important;
     word-wrap: break-word!important;
 }
 
+//?  APELLIDOS
 .mat-column-apellidos {
     width: 15% !important;
     padding-right: 0.5em !important;
     word-wrap: break-word!important;
 }
 
+//?  FECHA DE NACIMIENTO
 .mat-column-fecha_nacimiento {
     width: 9% !important;
     padding-right: 2.25em !important;
     word-wrap: break-word!important;
 }
 
+//?  ENTIDAD
 .mat-column-entidad_display {
     width: 13% !important;
     padding-right: 0.75em !important;
     word-wrap: break-word!important;
 }
 
+//?  CICLO
 .mat-column-ciclo_display {
     width: 6% !important;
     padding-right: 3.75em !important;
     word-wrap: break-word!important;
 }
 
+//?  CURSO
 .mat-column-curso {
     width: 6% !important;
     padding-right: 4em !important;
     word-wrap: break-word!important;
 }
 
+//?  VACANTE ASIGNADA
 .mat-column-vacante_asignada_display {
     width: 14% !important;
     padding-right: 1em !important;
     word-wrap: break-word!important;
 }
 
+//?  ACTIONS
 .mat-column-actions {
     width: 11% !important;
     padding-right: 0em !important;

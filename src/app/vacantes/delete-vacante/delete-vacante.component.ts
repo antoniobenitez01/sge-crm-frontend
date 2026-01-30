@@ -14,8 +14,8 @@ export class DeleteVacanteComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<DeleteVacanteComponent>,
-    @Inject(MAT_DIALOG_DATA) public vacante: Vacante,
-    public servicioVacantes: VacantesService,
+    @Inject(MAT_DIALOG_DATA) public vacante: Vacante,           //  DATOS - Vacante
+    public servicioVacantes: VacantesService,                   //  SERVICIO - Vacantes
     public snackBar: MatSnackBar,
   )
   {   }
@@ -28,7 +28,9 @@ export class DeleteVacanteComponent implements OnInit {
     this.dialogRef.close({ ok: false });
   }
 
+  // CONFIRM DELETE - Proceso de Eliminación de Vacante
   async confirmDelete() {
+    //  --- HTTP REQUEST : Delete Vacante
     const RESPONSE = await this.servicioVacantes.deleteVacante(this.vacante.id_vacante).toPromise();
     if (RESPONSE.ok) {
       this.snackBar.open(RESPONSE.message, CLOSE, { duration: 5000 });
