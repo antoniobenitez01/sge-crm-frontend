@@ -11,6 +11,10 @@ import { Ciclo } from 'src/app/shared/interfaces/ciclo';
 import { CiclosService } from 'src/app/services/ciclos.service';
 import { AlumnosService } from 'src/app/services/alumnos.service';
 import { Alumno } from 'src/app/shared/interfaces/alumno';
+import { VacanteXAlumnoService } from 'src/app/services/vacante_x_alumno.service';
+import { VacanteXAlumno } from 'src/app/shared/interfaces/vacantexalumno';
+import { Vacante } from 'src/app/shared/interfaces/vacante';
+import { VacantesService } from 'src/app/services/vacantes.service';
 
 @Component({
   selector: 'app-edit-alumno',
@@ -24,16 +28,20 @@ export class EditAlumnoComponent implements OnInit {
   entidades : Entidad[];                                              //  Lista de Entidades
   ciclos: Ciclo[];                                                    //  Lista de Ciclos
   provincias: Provincia[];                                            //  Lista de Provincias
+  vacanteAsignada : Vacante;                                          //  Vacante Asignada a Alumno
+  vacanteXAlumnoAsignada : VacanteXAlumno;                            //  Vacante X Alumno Asignada a Alumno
 
   ALUMNO: String;
 
   constructor(public dialogRef: MatDialogRef<EditAlumnoComponent>,
     @Inject(MAT_DIALOG_DATA) public alumno: Alumno,
     private snackBar: MatSnackBar,
-    private servicioAlumno: AlumnosService,                           //  SERVICIO - Vacantes
+    private servicioAlumno: AlumnosService,                           //  SERVICIO - Alumnos
+    private servicioVacante : VacantesService,                        //  SERVICIO - Vacantes
     private servicioEntidad: EntidadesService,                        //  SERVICIO - Entidades
     private servicioCiclo : CiclosService,                            //  SERVICIO - Ciclos
     private servicioProvincia: ProvinciasService,                     //  SERVICIO - Provincias
+    private servicioVacantesXAlumnos : VacanteXAlumnoService          //  SERVICIO - Vacante X Alumno
 
   ){ }
 
@@ -91,7 +99,7 @@ export class EditAlumnoComponent implements OnInit {
       }
 
       //  --- Validación duplicados
-      const duplicate = this.alumnos.find( alu => alu.nif_nie === alumno.nif_nie);
+      const duplicate = this.alumnos.find( alu => alu.nif_nie === alumno.nif_nie && alu.id_alumno != alumno.id_alumno);
       if(duplicate){
         this.snackBar.open("Ya existe un Alumno con el mismo DNI", CLOSE, { duration: 5000 });
         return;
@@ -100,6 +108,28 @@ export class EditAlumnoComponent implements OnInit {
       //  --- HTTP REQUEST : Edit Alumno
       const RESPONSE = await this.servicioAlumno.editAlumno(alumno).toPromise();
       if (RESPONSE.ok) {
+
+        //  A continuación, comprobamos si se ha cambiado el Curso o el Ciclo del Alumno
+        //  para eliminar las relaciones VacantesXAlumnos asociadas al Alumno
+        const alumnoCreado = RESPONSE.data as Alumno;                                               //  Alumno creado con exito
+        await this.getVacanteAsignada(alumnoCreado.id_alumno).catch(() => {
+          this.vacanteAsignada = null;
+        });
+
+        //  Solo ejecutamos este código si existe una vacante asignada
+        if(this.vacanteAsignada){
+          if ((this.vacanteAsignada.curso !== alumnoCreado.curso) || (this.vacanteAsignada.ciclo !== alumnoCreado.ciclo)){
+            try {
+              await this.getVacanteXAlumnoAsignada(alumnoCreado.id_alumno);
+              const deleteResponse = await this.servicioVacantesXAlumnos.deleteVacanteXAlumno(
+                  this.vacanteXAlumnoAsignada.id_vacante_x_alumno
+              ).toPromise();
+            } catch (error) {
+              this.snackBar.open(error, CLOSE, { duration: 5000 });
+            }
+          }
+        }
+
         //  Si todo ha funcionado de forma correcta, mostramos el mensaje recibido
         //  y cerramos nuestro Dialog de Añadir Vacante
         this.snackBar.open(RESPONSE.message, CLOSE, { duration: 5000 });
@@ -142,6 +172,22 @@ export class EditAlumnoComponent implements OnInit {
     const RESPONSE = await this.servicioProvincia.getAllProvincias().toPromise();
     if (RESPONSE.ok){
       this.provincias = RESPONSE.data as Provincia[];
+    }
+  }
+
+  //  GET VACANTE ASIGNADA - Recogida de Vacante Asignada en BBDD
+  async getVacanteAsignada( id_alumno : number ){
+    const RESPONSE = await this.servicioVacante.getVacanteByAlumnoId(id_alumno).toPromise();
+    if (RESPONSE.ok){
+      this.vacanteAsignada = RESPONSE.data as Vacante;
+    }
+  }
+
+  //  GET VACANTE ASIGNADA - Recogida de Vacante Asignada en BBDD
+  async getVacanteXAlumnoAsignada( id_alumno : number ){
+    const RESPONSE = await this.servicioVacantesXAlumnos.getVacanteXAlumnoByAlumnoId(id_alumno).toPromise();
+    if (RESPONSE.ok){
+      this.vacanteXAlumnoAsignada = RESPONSE.data as VacanteXAlumno;
     }
   }
 
